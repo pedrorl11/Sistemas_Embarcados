@@ -1,0 +1,47 @@
+volatile char resultado;
+
+int main() {
+  TCCR1B |= (1 << CS10) | (1 << WGM12);
+  TIMSK1 |= (1 << OCIE1A);
+  OCR1A = 124;
+
+  ADMUX |= (1 << REFS0);
+  ADCSRA |= (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1);
+  DIDR0 |= (1 << ADC0D);
+
+  // Configuração do PWM
+  TCCR0A |= (1 << WGM00) | (1 << WGM01) | (1 << COM0A1);
+  TCCR0B |= (1 << CS01);
+  DDRD |= (1 << PD6);
+
+
+  DDRD |= (1 << PD4) | (1 << PD5);
+  PORTD |= (1 << PD2) | (1 << PD3);
+
+
+  sei();
+
+  while (1) {
+    ADCSRA |= (1 << ADSC);
+    while (ADCSRA & (1 << ADSC)) {
+      char resultado = ADC >> 2;
+
+      if (!(PIND & (1 << PD2)) && !(PIND & (1 << PD3))) {
+        PORTD &= ~((1 << PD4) | (1 << PD5));
+
+      } else if (!(PIND & (1 << PD2))) {
+        PORTD |= (1 << PD4);  // sentido horário
+        PORTD &= ~(1 << PD5);
+
+      } else if (!(PIND & (1 << PD3))) {
+        PORTD |= (1 << PD5);  // sentido anti-horário
+        PORTD &= ~(1 << PD4);
+
+      } else {
+        PORTD &= ~((1 << PD4) | (1 << PD5));
+      }
+
+      OCR0A = resultado;
+    }
+  }
+}
